@@ -63,12 +63,13 @@ out:
 
 static ssize_t tic_write(struct file *file, const char __user *data, size_t count, loff_t *f_pos){
 	int ret = 0;
+	int i;
 	char buf[3];
 	int row, col;
 	printk(KERN_INFO "Tic Tac Toe write called with %i characters\n", (int)count);
 	if (count < 3) {
 		printk(KERN_ERR "Tic Tac Toe write: bad format, should be \"row,column\" (e.g. \"1,3\")");
-		return -EFBIG;
+		return -EINVAL;
 	}
 	if (mutex_lock_interruptible(&rw)) {
 		printk(KERN_ERR "Tic Tac Toe write: failed to acquire access to grid\n");
@@ -90,8 +91,11 @@ static ssize_t tic_write(struct file *file, const char __user *data, size_t coun
 	case '3':
 		row = 2;
 		break;
+	case '0':
+		row = 9;
+		break;
 	default:
-		ret = -EFAULT;
+		ret = -EINVAL;
 		goto out;
 	}
 	switch (buf[2]) {
@@ -104,13 +108,29 @@ static ssize_t tic_write(struct file *file, const char __user *data, size_t coun
 	case '3':
 		col = 2;
 		break;
+	case '0':
+		col = 9;
+		break;
 	default:
-		ret = -EFAULT;
+		ret = -EINVAL;
+		goto out;
+	}
+	if (row == 9 || col == 9) {
+		for (i = 0; i < 9; i++) {
+			grid[i] = ' ';
+		}
+		c = 'X';
+		ret = count;
+		goto out;
+	}
+	if (grid[row*3 + col] != ' ') {
+		printk(KERN_ERR "Tic Tac Toe write: square is already used.\n");
+		ret = -EINVAL;
 		goto out;
 	}
 	grid[row*3 + col] = c;
 	c = (c == 'X') ? 'O' : 'X';
-	ret = 3;
+	ret = count;
 out:
 	mutex_unlock(&rw);
 	return ret;
