@@ -15,6 +15,7 @@ static struct cdev *tic_cdev;
 
 static char *grid;
 static struct mutex rw;
+char c;
 
 static int tic_open(struct inode *inode, struct file *file) {
 	printk(KERN_INFO "Tic Tac Toe opened\n");
@@ -34,7 +35,6 @@ static ssize_t tic_read(struct file *file, char __user *data, size_t count, loff
 	size_t bytesToWrite;
 
 	printk(KERN_INFO "Tic Tac Toe read called\n");
-
 	if (mutex_lock_interruptible(&rw)) {
 		printk(KERN_ERR "Tic Tac Toe Read: failed to acquire access to grid\n");
 		return -ERESTARTSYS;
@@ -61,11 +61,67 @@ out:
 	return ret;
 }
 
+static ssize_t tic_write(struct file *file, const char __user *data, size_t count, loff_t *f_pos){
+	int ret = 0;
+	char buf[3];
+	int row, col;
+	printk(KERN_INFO "Tic Tac Toe write called with %i characters\n", (int)count);
+	if (count < 3) {
+		printk(KERN_ERR "Tic Tac Toe write: bad format, should be \"row,column\" (e.g. \"1,3\")");
+		return -EFBIG;
+	}
+	if (mutex_lock_interruptible(&rw)) {
+		printk(KERN_ERR "Tic Tac Toe write: failed to acquire access to grid\n");
+		return -ERESTARTSYS;
+	}
+	if(copy_from_user(buf, data, 3)){
+		ret = -EFAULT;
+		printk(KERN_ERR "Tic Tac Toe write: failed to copy data from user\n");
+		goto out;
+	}
+	printk(KERN_INFO "%c%c%c\n", buf[0], buf[1], buf[2]);
+	switch (buf[0]) {
+	case '1':
+		row = 0;
+		break;
+	case '2':
+		row = 1;
+		break;
+	case '3':
+		row = 2;
+		break;
+	default:
+		ret = -EFAULT;
+		goto out;
+	}
+	switch (buf[2]) {
+	case '1':
+		col = 0;
+		break;
+	case '2':
+		col = 1;
+		break;
+	case '3':
+		col = 2;
+		break;
+	default:
+		ret = -EFAULT;
+		goto out;
+	}
+	grid[row*3 + col] = c;
+	c = (c == 'X') ? 'O' : 'X';
+	ret = 3;
+out:
+	mutex_unlock(&rw);
+	return ret;
+}
+
 static const struct file_operations tic_fops = {
 	.owner = THIS_MODULE,
 	.open = tic_open,
 	.release = tic_release,
 	.read = tic_read,
+	.write = tic_write,
 };
 
 static int tic_init(void) {
@@ -111,6 +167,8 @@ static int tic_init(void) {
 	for (i = 0; i < 9; i++){
 		grid[i] = ' ';
 	}
+
+	c = 'X';
 
 	mutex_unlock(&rw);
 
