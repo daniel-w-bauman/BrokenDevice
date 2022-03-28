@@ -176,7 +176,6 @@ static int tic_init(void) {
 		printk(KERN_ERR "Tic Tac Toe init: Failed to acquire access to grid\n");
 		goto fail_add;
 	}
-
 	grid = (char *) kzalloc(9, GFP_KERNEL);
 	if (!grid) {
 		printk(KERN_ERR "Tic Tac Toe open: failed to allocate memory for grid\n");
@@ -208,6 +207,7 @@ fail_region:
 
 static void tic_exit(void) {
 	printk(KERN_INFO "Tic Tac Toe exit called\n");
+	kfree(grid);
 	cdev_del(tic_cdev);
 	unregister_chrdev_region(tic_dev, 1);
 }
