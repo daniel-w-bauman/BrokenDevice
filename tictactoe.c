@@ -32,7 +32,6 @@ static ssize_t tic_read(struct file *file, char __user *data, size_t count, loff
 	int l = 0;
 	int ret = 0;
 	char buf[BOARDSIZE];
-	size_t bytesToWrite;
 
 	printk(KERN_INFO "Tic Tac Toe read called\n");
 	if (mutex_lock_interruptible(&rw)) {
@@ -49,13 +48,12 @@ static ssize_t tic_read(struct file *file, char __user *data, size_t count, loff
 		}
 		buf[l++] = '\n';
 	}
-	bytesToWrite = ((*f_pos + count) > BOARDSIZE) ? (BOARDSIZE - *f_pos) : count;
-	if (copy_to_user(data, *f_pos + buf, bytesToWrite)) {
+	if (copy_to_user(data, *f_pos + buf, count)) {
 		ret = -EFAULT;
 		goto out;
 	}
-	*f_pos += bytesToWrite;
-	ret = bytesToWrite;
+	*f_pos += count;
+	ret = count;
 out:
 	mutex_unlock(&rw);
 	return ret;
