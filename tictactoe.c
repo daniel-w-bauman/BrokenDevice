@@ -130,7 +130,7 @@ static ssize_t tic_write(struct file *file, const char __user *data, size_t coun
 	}
 	grid[row*3 + col] = c;
 	c = (c == 'X') ? 'O' : 'X';
-	ret = count;
+	ret = 3;
 out:
 	mutex_unlock(&rw);
 	return ret;
