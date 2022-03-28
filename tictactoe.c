@@ -139,7 +139,6 @@ static const struct file_operations tic_fops = {
 	.open = tic_open,
 	.release = tic_release,
 	.read = tic_read,
-	.write = tic_write,
 };
 
 static int tic_init(void) {
