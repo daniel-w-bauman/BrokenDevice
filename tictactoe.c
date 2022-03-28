@@ -55,7 +55,6 @@ static ssize_t tic_read(struct file *file, char __user *data, size_t count, loff
 	*f_pos += count;
 	ret = count;
 out:
-	mutex_unlock(&rw);
 	return ret;
 }
 
