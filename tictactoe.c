@@ -48,7 +48,7 @@ static ssize_t tic_read(struct file *file, char __user *data, size_t count, loff
 		}
 		buf[l++] = '\n';
 	}
-	if (copy_to_user(data, *f_pos + buf, count)) {
+	if (copy_to_user(data, *f_pos + buf, BOARDSIZE - *f_pos)) {
 		ret = -EFAULT;
 		goto out;
 	}
